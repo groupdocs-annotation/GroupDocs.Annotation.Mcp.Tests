@@ -29,7 +29,12 @@ internal sealed class ToolCatalog
     public McpClientTool UpdateAnnotation     => Resolve("update");
     public McpClientTool RemoveAnnotations    => Resolve("remove",   required: "annotation");
     public McpClientTool AddReply             => Resolve("reply",    required: "add");
-    public McpClientTool RemoveReplies        => Resolve("reply",    required: "remove");
+    // RemoveReplies wire name is `remove_replies` (plural). The literal string
+    // "replies" does NOT contain "reply" (replies = r-e-p-l-i-e-s, no 'y' after
+    // 'l'), so we keyword on "replies" not "reply" — Pitfall #15. Pair with
+    // `required: "remove"` so we don't accidentally match `add_reply`'s plural
+    // form if one ever ships.
+    public McpClientTool RemoveReplies        => Resolve("replies",  required: "remove");
     public McpClientTool ImportAnnotations    => Resolve("import");
     public McpClientTool ExportAnnotations    => Resolve("export");
     public McpClientTool GetDocumentInfo      => Resolve("document", required: "info");
