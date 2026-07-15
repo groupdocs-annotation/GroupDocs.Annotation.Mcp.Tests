@@ -30,7 +30,7 @@ Create the file at the root of your workspace:
     "groupdocs-annotation": {
       "type": "stdio",
       "command": "dnx",
-      "args": ["GroupDocs.Annotation.Mcp@26.5.0", "--yes"],
+      "args": ["GroupDocs.Annotation.Mcp@26.7.0", "--yes"],
       "env": {
         "GROUPDOCS_MCP_STORAGE_PATH": "${input:storage_path}"
       }
@@ -59,7 +59,7 @@ value.
       "args": [
         "run", "--rm", "-i",
         "-v", "${workspaceFolder}/documents:/data",
-        "ghcr.io/groupdocs-annotation/annotation-net-mcp:26.5.0"
+        "ghcr.io/groupdocs-annotation/annotation-net-mcp:26.7.0"
       ]
     }
   }
@@ -132,7 +132,8 @@ Add to the `env` block:
 }
 ```
 
-Without a license, `verify` errors (see
+Without a license the server still runs; document-writing tools and previews may
+emit watermarked output (see
 [01 — NuGet install § License](01-install-from-nuget.md#license)).
 
 ## Troubleshooting

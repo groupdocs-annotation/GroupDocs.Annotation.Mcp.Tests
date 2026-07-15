@@ -30,15 +30,17 @@ and user-facing how-to guides for every deployment channel.
 | Area | Covered by |
 |---|---|
 | Package installs and starts via `dnx` | [McpServerFixture](src/GroupDocs.Annotation.Mcp.Tests/Fixtures/McpServerFixture.cs) |
-| MCP handshake, server info, 8-tool advertisement | [ToolDiscoveryTests](src/GroupDocs.Annotation.Mcp.Tests/ToolDiscoveryTests.cs) |
-| `Sign` — text / qrcode / barcode + signed-output presence | [SignTests](src/GroupDocs.Annotation.Mcp.Tests/SignTests.cs) |
-| `Verify` — JSON shape + per-type parameter | [VerifyTests](src/GroupDocs.Annotation.Mcp.Tests/VerifyTests.cs) |
-| `SearchTextSignatures` + filter | [SearchTextSignaturesTests](src/GroupDocs.Annotation.Mcp.Tests/SearchTextSignaturesTests.cs) |
-| `SearchBarcodes` + filter | [SearchBarcodesTests](src/GroupDocs.Annotation.Mcp.Tests/SearchBarcodesTests.cs) |
-| `SearchQrCodes` + filter | [SearchQrCodesTests](src/GroupDocs.Annotation.Mcp.Tests/SearchQrCodesTests.cs) |
-| `SearchDigitalSignatures` | [SearchDigitalSignaturesTests](src/GroupDocs.Annotation.Mcp.Tests/SearchDigitalSignaturesTests.cs) |
-| `SearchImageSignatures` | [SearchImageSignaturesTests](src/GroupDocs.Annotation.Mcp.Tests/SearchImageSignaturesTests.cs) |
+| MCP handshake, server info, 10-tool advertisement | [ToolDiscoveryTests](src/GroupDocs.Annotation.Mcp.Tests/ToolDiscoveryTests.cs) |
+| `AddAnnotation` — add a type + saved-output presence | [AddAnnotationTests](src/GroupDocs.Annotation.Mcp.Tests/AddAnnotationTests.cs) |
+| `GetAnnotations` — JSON shape (id / type / message / page / box / replies) | [GetAnnotationsTests](src/GroupDocs.Annotation.Mcp.Tests/GetAnnotationsTests.cs) |
+| `UpdateAnnotation` — message / box edit by id | [UpdateAnnotationTests](src/GroupDocs.Annotation.Mcp.Tests/UpdateAnnotationTests.cs) |
+| `RemoveAnnotations` — by id list / all | [RemoveAnnotationsTests](src/GroupDocs.Annotation.Mcp.Tests/RemoveAnnotationsTests.cs) |
+| `AddReply` — reply thread by annotation id | [AddReplyTests](src/GroupDocs.Annotation.Mcp.Tests/AddReplyTests.cs) |
+| `RemoveReplies` — by reply-id list / user / all | [RemoveRepliesTests](src/GroupDocs.Annotation.Mcp.Tests/RemoveRepliesTests.cs) |
+| `ImportAnnotations` — XML / document source | [ImportAnnotationsTests](src/GroupDocs.Annotation.Mcp.Tests/ImportAnnotationsTests.cs) |
+| `ExportAnnotations` — XML dump presence | [ExportAnnotationsTests](src/GroupDocs.Annotation.Mcp.Tests/ExportAnnotationsTests.cs) |
 | `GetDocumentInfo` — JSON shape + per-format theory | [GetDocumentInfoTests](src/GroupDocs.Annotation.Mcp.Tests/GetDocumentInfoTests.cs) |
+| `GeneratePagesPreview` — inline PNG image content blocks | [GeneratePagesPreviewTests](src/GroupDocs.Annotation.Mcp.Tests/GeneratePagesPreviewTests.cs) |
 | Unknown / corrupted files, password parameter | [ErrorHandlingTests](src/GroupDocs.Annotation.Mcp.Tests/ErrorHandlingTests.cs) |
 
 ## Running locally
@@ -52,9 +54,9 @@ dotnet test
 Test a specific published version:
 
 ```bash
-dotnet test -p:McpPackageVersion=26.5.0
+dotnet test -p:McpPackageVersion=26.7.0
 # or
-MCP_PACKAGE_VERSION=26.5.0 dotnet test
+MCP_PACKAGE_VERSION=26.7.0 dotnet test
 ```
 
 The first run downloads the NuGet package — subsequent runs are cached.
@@ -89,11 +91,13 @@ after the `dotnet nuget push` step:
 
 ## Evaluation vs licensed mode
 
-In evaluation mode, the `sign` tool adds a diagnostic watermark to signed
-pages and prefixes its response with `"[Evaluation mode]"`. All 10 tools
-still function — `verify`, `search*`, and `getDocumentInfo` are read-only
-and unaffected. Tests pass under both modes; the licensed mode just produces
-watermark-free `sign` output.
+In evaluation mode, the document-writing tools (`add_annotation`,
+`update_annotation`, `remove_annotations`, `add_reply`, `remove_replies`,
+`import_annotations`) and `generate_pages_preview` may emit output carrying a
+watermark and prefix their response with `"[Evaluation mode]"`. All 10 tools
+still function — `get_annotations` and `get_document_info` are read-only and
+unaffected. Tests pass under both modes; the licensed mode just produces
+watermark-free output.
 
 For CI, store a base64-encoded `.lic` file as repo secret `GROUPDOCS_LICENSE`
 — the workflow decodes it into `$RUNNER_TEMP` and exports
