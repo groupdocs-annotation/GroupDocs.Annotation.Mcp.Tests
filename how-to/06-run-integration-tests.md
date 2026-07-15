@@ -14,7 +14,7 @@ release is healthy before promoting it, or gate CI on live smoke checks.
 ## Run locally
 
 ```bash
-# All ~27 tests against the default pinned version (26.5.0)
+# All ~27 tests against the default pinned version (26.7.0)
 dotnet test -c Release
 ```
 
@@ -22,24 +22,26 @@ dotnet test -c Release
 
 ```bash
 # Via MSBuild property
-dotnet test -c Release -p:McpPackageVersion=26.5.0
+dotnet test -c Release -p:McpPackageVersion=26.7.0
 
 # Or via env var
-MCP_PACKAGE_VERSION=26.5.0 dotnet test -c Release
+MCP_PACKAGE_VERSION=26.7.0 dotnet test -c Release
 ```
 
 Version resolution order (highest wins):
 
 1. `MCP_PACKAGE_VERSION` environment variable
 2. `McpPackageVersion` MSBuild property → baked into assembly metadata
-3. Default: `26.5.0`
+3. Default: `26.7.0`
 
 ## Unlock licensed-mode tests
 
-In evaluation mode the `sign` tool adds a diagnostic watermark to signed pages
-and prefixes its response with `"[Evaluation mode]"`. All 10 tools still
+In evaluation mode the document-writing tools (`add_annotation`,
+`update_annotation`, `remove_annotations`, `add_reply`, `remove_replies`,
+`import_annotations`) and `generate_pages_preview` may emit watermarked output
+and prefix their response with `"[Evaluation mode]"`. All 10 tools still
 function — there are no fully license-gated paths today — but if you want
-watermark-free `sign` output, configure a license file:
+watermark-free output, configure a license file:
 
 ```bash
 export GROUPDOCS_LICENSE_PATH=/absolute/path/to/GroupDocs.Total.lic
@@ -161,7 +163,7 @@ mkdir -p /tmp/gd && cp some.pdf /tmp/gd/
   echo '{"jsonrpc":"2.0","method":"notifications/initialized"}'
   echo '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"verify","arguments":{"file":{"filePath":"some.pdf"}}}}'
   sleep 5
-) | GROUPDOCS_MCP_STORAGE_PATH=/tmp/gd dnx GroupDocs.Annotation.Mcp@26.5.0 --yes \
+) | GROUPDOCS_MCP_STORAGE_PATH=/tmp/gd dnx GroupDocs.Annotation.Mcp@26.7.0 --yes \
     > stdout.log 2> stderr.log
 tail -50 stderr.log
 ```

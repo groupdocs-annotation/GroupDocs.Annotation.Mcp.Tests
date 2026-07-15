@@ -21,22 +21,22 @@
 #   ./04_run-server-with-samples.sh [OPTIONS]
 #
 # Options:
-#   --image-tag TAG         Image tag (default: latest). Pin to e.g. "26.5.0"
+#   --image-tag TAG         Image tag (default: latest). Pin to e.g. "26.7.0"
 #                           for reproducible runs. Each release pushes both the
 #                           version tag AND :latest.
 #   --no-pull               Skip the implicit `--pull always` (use cached image)
 #   --smoke                 Run a JSON-RPC smoke test instead of an interactive
 #                           server. Exits non-zero if the server doesn't
-#                           advertise both `sign` and `verify`.
-#   --license PATH          Mount a GroupDocs license file (enables
-#                           verify; without it the server runs in
+#                           advertise the annotation tools (e.g. add_annotation).
+#   --license PATH          Mount a GroupDocs license file (removes the
+#                           evaluation watermark; without it the server runs in
 #                           evaluation mode)
 #   --help                  Show this help message
 #
 # Examples:
 #   ./04_run-server-with-samples.sh                      # interactive, latest
 #   ./04_run-server-with-samples.sh --smoke              # CI-style smoke check
-#   ./04_run-server-with-samples.sh --image-tag 26.5.0   # pinned
+#   ./04_run-server-with-samples.sh --image-tag 26.7.0   # pinned
 #   ./04_run-server-with-samples.sh --license /path/to/GroupDocs.Total.lic
 #
 ################################################################################
