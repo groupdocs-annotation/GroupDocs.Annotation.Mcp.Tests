@@ -10,7 +10,7 @@ This repo is **not** the server itself. The server lives at [groupdocs-annotatio
 
 1. Consumes only the **published** NuGet artifact (no project references).
 2. Launches the server via `dnx`, connects as an MCP stdio client, and exercises every advertised tool.
-3. Doubles as a copy-pasteable set of example configs and how-to guides for all deployment channels (NuGet, Docker, MCP registry, Claude Desktop, VS Code).
+3. Doubles as a copy-pasteable set of example configs and how-to guides for all deployment channels (NuGet, Docker, MCP registry, Claude Desktop, VS Code, Cursor).
 
 ## Folder layout
 
@@ -19,13 +19,21 @@ src/GroupDocs.Annotation.Mcp.Tests/
   Fixtures/
     McpServerFixture.cs          ← launches dnx child process, wires stdio MCP client
     SampleDocuments.cs           ← builds minimal PDF + JPEG from byte arrays at runtime
-    ToolCatalog.cs               ← keyword-based tool name resolution (read/remove)
+    ToolCatalog.cs               ← keyword-based tool name resolution (annotations/replies/preview)
     ToolResponse.cs              ← CallToolResult text/JSON extraction
     CommandResolver.cs           ← cross-platform dnx.cmd resolution on Windows
     PackageVersion.cs            ← pulls version from env / assembly metadata / default
-  ToolDiscoveryTests.cs          ← handshake, tools/list, schema validation
-  SignTests.cs           ← PDF + JPEG happy-path + known-value assertions
-  VerifyTests.cs         ← branches on GROUPDOCS_LICENSE_PATH (eval vs licensed)
+  ToolDiscoveryTests.cs          ← handshake, tools/list, schema validation (10 tools)
+  AddAnnotationTests.cs          ← add a type + saved-output presence
+  GetAnnotationsTests.cs         ← JSON shape (id / type / message / page / box / replies)
+  UpdateAnnotationTests.cs       ← message / box edit by id
+  RemoveAnnotationsTests.cs      ← by id list / all
+  AddReplyTests.cs               ← reply thread by annotation id
+  RemoveRepliesTests.cs          ← by reply-id list / user / all
+  ImportAnnotationsTests.cs      ← XML / document source dispatch
+  ExportAnnotationsTests.cs      ← XML dump presence
+  GetDocumentInfoTests.cs        ← JSON shape + per-format theory
+  GeneratePagesPreviewTests.cs   ← inline PNG image content blocks
   ErrorHandlingTests.cs          ← unknown file, corrupted bytes, password parameter
   GroupDocs.Annotation.Mcp.Tests.csproj
 .github/workflows/integration.yml  ← matrix × 3 OS, nightly cron, release-smoke dispatch
@@ -42,9 +50,12 @@ global.json                        ← pinned to .NET 10.0.100
 | Area | Covered by |
 |---|---|
 | Package installs and starts via `dnx` | `McpServerFixture` |
-| MCP handshake, server info, version | `ToolDiscoveryTests` |
-| `sign` — PDF + JPEG, schema + values | `SignTests` |
-| `verify` — output file + read-back check (licensed mode) | `VerifyTests` |
+| MCP handshake, server info, 10-tool advertisement | `ToolDiscoveryTests` |
+| `add_annotation` / `update_annotation` / `remove_annotations` | `AddAnnotationTests` / `UpdateAnnotationTests` / `RemoveAnnotationsTests` |
+| `get_annotations` / `get_document_info` — JSON shape | `GetAnnotationsTests` / `GetDocumentInfoTests` |
+| `add_reply` / `remove_replies` — comment threads | `AddReplyTests` / `RemoveRepliesTests` |
+| `import_annotations` / `export_annotations` — XML round-trip | `ImportAnnotationsTests` / `ExportAnnotationsTests` |
+| `generate_pages_preview` — inline PNG image blocks | `GeneratePagesPreviewTests` |
 | Unknown / corrupted files, password parameter | `ErrorHandlingTests` |
 
 ## Commands you can run
@@ -54,13 +65,13 @@ global.json                        ← pinned to .NET 10.0.100
 dotnet restore
 dotnet build -c Release
 
-# Run all 12 tests against the default package version (26.5.0)
+# Run all 12 tests against the default package version (26.7.0)
 dotnet test -c Release
 
 # Run against a specific published version
-dotnet test -c Release -p:McpPackageVersion=26.5.0
+dotnet test -c Release -p:McpPackageVersion=26.7.0
 # or
-MCP_PACKAGE_VERSION=26.5.0 dotnet test -c Release
+MCP_PACKAGE_VERSION=26.7.0 dotnet test -c Release
 
 # Unlock licensed-mode Verify tests
 GROUPDOCS_LICENSE_PATH=/path/to/GroupDocs.Total.lic dotnet test -c Release
@@ -71,13 +82,13 @@ dotnet test -c Release --filter "FullyQualifiedName~ToolDiscovery"
 
 ## Key design decisions
 
-1. **Keyword-based tool resolution.** `ToolCatalog.Resolve("read")` picks the tool whose name contains "read" (case-insensitive). The MCP C# SDK converts `[McpServerTool]` method names to `snake_case` — so the actual wire names are `sign` and `verify`, not `Sign`. Tests stay robust if that convention changes.
+1. **Keyword-based tool resolution.** `ToolCatalog.Resolve("preview")` picks the tool whose snake_case wire name contains the keyword (case-insensitive). The MCP C# SDK converts `[McpServerTool]` method names to `snake_case` — so the actual wire names are `add_annotation`, `get_annotations`, `generate_pages_preview`, etc., not `AddAnnotation`. Keywords must be snake_case substrings of the wire name (Pitfall #15). Tests stay robust if that convention changes.
 
 2. **Fixtures.** `SampleDocuments.cs` builds a minimal blank PDF and a baseline 1×1 JPEG from byte arrays at startup. Real PDF / DOCX / XLSX / JPG / PNG samples — copied verbatim from the upstream `GroupDocs.Annotation-for-.NET` examples repo — live under `Files/` and the csproj auto-copies them into the test output (see `Files/README.md` for provenance). Per-format theories skip themselves when a sample is missing.
 
-3. **Evaluation mode.** All 10 tools function without a license. `sign` adds a diagnostic watermark to signed pages and prefixes its response with `"[Evaluation mode]"`; the read-only tools (`verify`, `search*`, `get_document_info`) are unaffected. To exercise the watermark-free path, set `GROUPDOCS_LICENSE_PATH` — CI auto-decodes a `GROUPDOCS_LICENSE` repo secret into `$RUNNER_TEMP`.
+3. **Evaluation mode.** All 10 tools function without a license. The document-writing tools (`add_annotation`, `update_annotation`, `remove_annotations`, `add_reply`, `remove_replies`, `import_annotations`) and `generate_pages_preview` may emit watermarked output and prefix their response with `"[Evaluation mode]"`; the read-only tools (`get_annotations`, `get_document_info`) are unaffected. To exercise the watermark-free path, set `GROUPDOCS_LICENSE_PATH` — CI auto-decodes a `GROUPDOCS_LICENSE` repo secret into `$RUNNER_TEMP`.
 
-4. **JSON responses are raw.** `verify`, the `search*` tools, and `get_document_info` serialise JSON directly (Pitfall #16 — never via `OutputHelper.TruncateText`), so tests safely `JsonDocument.Parse` the response body.
+4. **JSON responses are raw.** `get_annotations` and `get_document_info` serialise JSON directly (Pitfall #16 — never via `OutputHelper.TruncateText`), so tests safely `JsonDocument.Parse` the response body.
 
 5. **No project references to the server.** The csproj only references `ModelContextProtocol` 1.1.0. If the server source breaks in the sibling repo, these tests still pass — they validate the shipped NuGet artifact.
 
@@ -96,5 +107,5 @@ The main repo's `publish_prod.yml` should fire a `repository_dispatch` with `eve
 ## What NOT to change
 
 - Do not add a `ProjectReference` to the main repo's `GroupDocs.Annotation.Mcp.csproj`. This repo exists to test the shipped NuGet, not the source.
-- Do not hardcode tool names as string literals (`"sign"`). Use `ToolCatalog.Read.Name` / `ToolCatalog.Remove.Name`.
+- Do not hardcode tool names as string literals (`"add_annotation"`). Use the `ToolCatalog` accessors (`ToolCatalog.AddAnnotation.Name`, etc.).
 - Do not commit real license files or binary fixtures with unclear provenance. License goes through the `GROUPDOCS_LICENSE` CI secret; fixtures in `Files/` must be self-authored or CC0/Apache-2.0.
