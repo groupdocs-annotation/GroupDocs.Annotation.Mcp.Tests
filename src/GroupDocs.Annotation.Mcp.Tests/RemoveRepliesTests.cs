@@ -4,8 +4,7 @@ using Xunit.Abstractions;
 
 namespace GroupDocs.Annotation.Mcp.IntegrationTests;
 
-[Collection(McpServerCollection.Name)]
-public class RemoveRepliesTests
+public class RemoveRepliesTests : IClassFixture<McpServerFixture>
 {
     private readonly McpServerFixture _fixture;
     private readonly ITestOutputHelper _output;
